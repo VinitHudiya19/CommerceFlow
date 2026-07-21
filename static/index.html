@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CommerceFlow — Premium Shop</title>
+    <!-- Inter Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="/app.css">
+    <!-- FontAwesome for clean icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Top Minimalist Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="#/" class="logo">
+                <span class="logo-accent">Commerce</span>Flow
+            </a>
+            <nav class="nav-links">
+                <a href="#/" class="nav-link" id="nav-products"><i class="fa-solid fa-store"></i> Products</a>
+                <a href="#/wishlist" class="nav-link auth-required" id="nav-wishlist"><i class="fa-solid fa-heart"></i> Wishlist</a>
+                <a href="#/cart" class="nav-link auth-required" id="nav-cart">
+                    <i class="fa-solid fa-shopping-bag"></i> Cart
+                    <span id="cart-badge" class="badge">0</span>
+                </a>
+                <a href="#/orders" class="nav-link auth-required" id="nav-orders"><i class="fa-solid fa-receipt"></i> Orders</a>
+                <a href="#/admin" class="nav-link auth-required admin-only" id="nav-admin"><i class="fa-solid fa-chart-line"></i> Admin</a>
+            </nav>
+            <div class="nav-actions">
+                <div id="user-profile-menu" class="user-menu hidden">
+                    <span id="nav-user-name" class="user-name">Profile</span>
+                    <button id="btn-logout" class="btn btn-secondary btn-sm"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
+                </div>
+                <div id="guest-menu" class="guest-menu">
+                    <a href="#/login" class="btn btn-secondary btn-sm">Login</a>
+                    <a href="#/register" class="btn btn-primary btn-sm">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Dynamic Container -->
+    <main id="app-content" class="main-container">
+        <!-- Rendered views go here -->
+    </main>
+
+    <!-- Global Mock Payment Dialog -->
+    <div id="payment-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Complete Mock Payment</h2>
+                <button class="btn-close-modal" id="btn-close-payment">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-card">
+                    <div class="card-brand">CommerceFlow Mock Gateway</div>
+                    <div class="payment-info">
+                        <div class="payment-row">
+                            <span>Order ID:</span>
+                            <strong id="pay-order-id">-</strong>
+                        </div>
+                        <div class="payment-row">
+                            <span>Amount:</span>
+                            <strong id="pay-amount">₹0.00</strong>
+                        </div>
+                        <div class="payment-row">
+                            <span>Transaction Reference:</span>
+                            <span id="pay-txn-id" class="monospace">-</span>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>Demo Mode:</strong> This is a secure mock integration. Clicking "Approve Payment" will simulate a successful webhook/callback notification, marking the order as CONFIRMED.
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button id="btn-approve-payment" class="btn btn-primary btn-block">Approve Payment</button>
+                    <button id="btn-cancel-payment" class="btn btn-secondary btn-block">Cancel & Pay Later</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Main JS Application Logic -->
+    <script src="/app.js"></script>
+</body>
+</html>
