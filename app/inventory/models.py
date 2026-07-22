@@ -14,4 +14,4 @@ class Inventory(Base):
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    product = relationship("Product", back_populates="inventory")
+    product = relationship("Product", back_populates="inventory", lazy="selectin")

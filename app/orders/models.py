@@ -40,4 +40,4 @@ class OrderItem(Base):
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2))
 
     # Relationships
-    order = relationship("Order", back_populates="items")
+    order = relationship("Order", back_populates="items", lazy="selectin")

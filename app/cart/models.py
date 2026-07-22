@@ -22,5 +22,5 @@ class CartItem(Base):
     unitPrice: Mapped[Decimal] = mapped_column(Numeric(10, 2))
 
     # Relationships
-    cart = relationship("Cart", back_populates="items")
+    cart = relationship("Cart", back_populates="items", lazy="selectin")
     product = relationship("Product", lazy="selectin")

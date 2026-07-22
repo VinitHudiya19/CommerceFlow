@@ -42,7 +42,7 @@ class Address(Base):
     pincode: Mapped[str] = mapped_column(String(10))
 
     # Relationships
-    user = relationship("User", back_populates="addresses")
+    user = relationship("User", back_populates="addresses", lazy="selectin")
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
@@ -53,4 +53,4 @@ class RefreshToken(Base):
     expiryDate: Mapped[datetime] = mapped_column(DateTime)
 
     # Relationships
-    user = relationship("User", back_populates="refresh_token")
+    user = relationship("User", back_populates="refresh_token", lazy="selectin")

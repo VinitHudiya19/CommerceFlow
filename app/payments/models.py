@@ -22,4 +22,4 @@ class Payment(Base):
     updatedAt: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    order = relationship("Order", back_populates="payment")
+    order = relationship("Order", back_populates="payment", lazy="selectin")
