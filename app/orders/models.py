@@ -33,7 +33,7 @@ class OrderItem(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     orderId: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"))
-    productId: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="SET_NULL"), nullable=True)
+    productId: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="SET NULL"), nullable=True)
     productName: Mapped[str] = mapped_column(String(150)) # Snapshot
     quantity: Mapped[int] = mapped_column(default=1)
     unitPrice: Mapped[Decimal] = mapped_column(Numeric(10, 2))
