@@ -433,7 +433,7 @@ function renderProductsList(products) {
                     </div>
                     <div class="product-meta">${product.categoryName || 'General'}</div>
                     <h3>${product.name}</h3>
-                    <div class="product-price">₹${product.price.toFixed(2)}</div>
+                    <div class="product-price">₹${Number(product.price).toFixed(2)}</div>
                 </a>
                 <button class="btn btn-secondary btn-block btn-add-cart" data-id="${product.id}">
                     <i class="fa-solid fa-shopping-cart"></i> Add to Cart
@@ -541,11 +541,11 @@ async function renderProductDetailPage(id) {
                         <div class="review-stars" style="margin-bottom: 0;">
                             ${getStarsHtml(averageRating)}
                         </div>
-                        <span style="font-weight: 600;">${averageRating.toFixed(1)}</span>
+                        <span style="font-weight: 600;">${Number(averageRating).toFixed(1)}</span>
                         <span class="text-muted">(${reviews.length} reviews)</span>
                     </div>
 
-                    <div class="product-price" style="font-size: 1.8rem; margin: 1.5rem 0;">₹${product.price.toFixed(2)}</div>
+                    <div class="product-price" style="font-size: 1.8rem; margin: 1.5rem 0;">₹${Number(product.price).toFixed(2)}</div>
                     
                     <p class="text-muted" style="margin-bottom: 2rem; font-size: 1rem; line-height: 1.6;">
                         ${product.description || 'No description provided for this item.'}
@@ -684,7 +684,7 @@ async function renderProductDetailPage(id) {
                                         <img src="${p.images[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=80&q=80'}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
                                         <div>
                                             <a href="#/product/${p.id}" style="font-weight: 600; text-decoration: none; color: #111; font-size: 0.85rem;">${p.name}</a>
-                                            <div style="font-size: 0.8rem; color: #999;">₹${p.price.toFixed(2)}</div>
+                                            <div style="font-size: 0.8rem; color: #999;">₹${Number(p.price).toFixed(2)}</div>
                                         </div>
                                     </div>
                                     <button class="btn btn-secondary btn-sm btn-add-rec-cart" data-id="${p.id}" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: 4px;">Add</button>
@@ -786,7 +786,7 @@ async function renderCartPage() {
                             <img class="cart-img" src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=100&q=80" alt="${item.productName}">
                             <div>
                                 <h4 style="font-size: 1.05rem;">${item.productName}</h4>
-                                <span class="text-muted">₹${item.unitPrice.toFixed(2)}</span>
+                                <span class="text-muted">₹${Number(item.unitPrice).toFixed(2)}</span>
                             </div>
                             <div>
                                 <div class="qty-control">
@@ -796,7 +796,7 @@ async function renderCartPage() {
                                 </div>
                             </div>
                             <div style="font-weight: 600; text-align: right;">
-                                ₹${item.subtotal.toFixed(2)}
+                                ₹${Number(item.subtotal).toFixed(2)}
                             </div>
                             <div style="text-align: right;">
                                 <button class="btn-remove-item btn-secondary btn-sm" data-id="${item.id}" style="color: var(--danger); border: none;">
@@ -822,7 +822,7 @@ async function renderCartPage() {
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 1.5rem 0; font-size: 1.2rem; font-weight: 700;">
                         <span>Estimated Total</span>
-                        <span>₹${cart.totalAmount.toFixed(2)}</span>
+                        <span>₹${Number(cart.totalAmount).toFixed(2)}</span>
                     </div>
                     <a href="#/checkout" class="btn btn-primary btn-block">Checkout Order</a>
                 </div>
@@ -974,13 +974,13 @@ async function renderCheckoutPage() {
                         ${cart.items.map(item => `
                             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
                                 <span class="text-muted">${item.productName} (x${item.quantity})</span>
-                                <span>₹${item.subtotal.toFixed(2)}</span>
+                                <span>₹${Number(item.subtotal).toFixed(2)}</span>
                             </div>
                         `).join('')}
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.5rem;">
                         <span>Order Total</span>
-                        <span>₹${cart.totalAmount.toFixed(2)}</span>
+                        <span>₹${Number(cart.totalAmount).toFixed(2)}</span>
                     </div>
 
                     <button id="btn-place-order" class="btn btn-primary btn-block">Place Order & Pay</button>
@@ -1081,7 +1081,7 @@ async function initiateMockPayment(orderId) {
 
         // Populate Modal Fields
         document.getElementById('pay-order-id').textContent = `#${payment.orderId}`;
-        document.getElementById('pay-amount').textContent = `₹${payment.amount.toFixed(2)}`;
+        document.getElementById('pay-amount').textContent = `₹${Number(payment.amount).toFixed(2)}`;
         document.getElementById('pay-txn-id').textContent = payment.transactionId;
         
         const modal = document.getElementById('payment-modal');
@@ -1169,7 +1169,7 @@ async function renderOrdersPage() {
                                 ${order.items.map(item => `
                                     <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
                                         <span>${item.productName} <strong>(x${item.quantity})</strong></span>
-                                        <span class="text-muted">₹${item.subtotal.toFixed(2)}</span>
+                                        <span class="text-muted">₹${Number(item.subtotal).toFixed(2)}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -1182,7 +1182,7 @@ async function renderOrdersPage() {
                                 </div>
                                 <div style="text-align: right;">
                                     <div style="font-size: 0.85rem; color: var(--text-secondary);">Total Paid</div>
-                                    <strong style="font-size: 1.3rem;">₹${order.totalAmount.toFixed(2)}</strong>
+                                    <strong style="font-size: 1.3rem;">₹${Number(order.totalAmount).toFixed(2)}</strong>
                                 </div>
                             </div>
                             
@@ -1358,7 +1358,7 @@ async function renderAdminPage() {
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Revenue</div>
-                    <div class="stat-value">₹${stats.totalRevenue.toFixed(2)}</div>
+                    <div class="stat-value">₹${Number(stats.totalRevenue).toFixed(2)}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Total Users</div>
@@ -1442,7 +1442,7 @@ async function renderAdminPage() {
                                     <tr>
                                         <td><strong>${p.name}</strong></td>
                                         <td class="text-muted">${p.categoryName || '-'}</td>
-                                        <td>₹${p.price.toFixed(2)}</td>
+                                        <td>₹${Number(p.price).toFixed(2)}</td>
                                         <td>
                                             <span class="status-tag ${p.active ? 'status-tag-delivered' : 'status-tag-cancelled'}">
                                                 ${p.active ? 'ACTIVE' : 'INACTIVE'}
