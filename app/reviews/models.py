@@ -15,4 +15,4 @@ class Review(Base):
     createdAt: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    product = relationship("Product", back_populates="reviews", lazy="selectin")
+    product = relationship("Product", back_populates="reviews", lazy="noload")

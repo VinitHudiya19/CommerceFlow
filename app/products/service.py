@@ -203,11 +203,8 @@ async def search_all_products(
 
     responses = []
     for p in products:
-        # Load Category details
-        cat_stmt = select(Category).where(Category.id == p.categoryId)
-        cat_res = await db.execute(cat_stmt)
-        cat = cat_res.scalars().first()
-        cat_name = cat.name if cat else None
+        # Category is already loaded via selectinload
+        cat_name = p.category.name if p.category else None
 
         # Load Stock details
         inv_stmt = select(Inventory).where(Inventory.productId == p.id)

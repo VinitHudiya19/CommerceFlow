@@ -13,8 +13,8 @@ class Category(Base):
     parentId: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
 
     # Relationships
-    parent = relationship("Category", remote_side=[id], backref="subcategories", lazy="selectin")
-    products = relationship("Product", back_populates="category", lazy="selectin")
+    parent = relationship("Category", remote_side=[id], backref="subcategories", lazy="noload")
+    products = relationship("Product", back_populates="category", lazy="noload")
 
 class Product(Base):
     __tablename__ = "products"
@@ -31,8 +31,8 @@ class Product(Base):
     # Relationships
     category = relationship("Category", back_populates="products", lazy="selectin")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan", lazy="selectin")
-    inventory = relationship("Inventory", back_populates="product", uselist=False, cascade="all, delete-orphan", lazy="selectin")
-    reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan", lazy="selectin")
+    inventory = relationship("Inventory", back_populates="product", uselist=False, cascade="all, delete-orphan", lazy="noload")
+    reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan", lazy="noload")
 
 class ProductImage(Base):
     __tablename__ = "product_images"
@@ -42,4 +42,4 @@ class ProductImage(Base):
     imageUrl: Mapped[str] = mapped_column(String(255))
 
     # Relationships
-    product = relationship("Product", back_populates="images", lazy="selectin")
+    product = relationship("Product", back_populates="images", lazy="noload")
