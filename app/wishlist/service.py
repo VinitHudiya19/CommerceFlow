@@ -32,7 +32,7 @@ async def get_user_wishlist(user_id: int, db: AsyncSession) -> list[WishlistResp
 
 async def add_item_to_wishlist(user_id: int, product_id: int, db: AsyncSession) -> WishlistResponse:
     # Verify product exists
-    prod_stmt = select(Product).where(Product.id == product_id)
+    prod_stmt = select(Product).options(selectinload(Product.images)).where(Product.id == product_id)
     prod_res = await db.execute(prod_stmt)
     product = prod_res.scalars().first()
     if not product:

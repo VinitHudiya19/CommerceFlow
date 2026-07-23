@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.inventory.models import Inventory
 from app.products.models import Product
@@ -6,7 +7,7 @@ from app.inventory.schemas import InventoryResponse
 from app.common.exceptions import ResourceNotFoundException
 
 async def list_all_inventories(db: AsyncSession) -> list[InventoryResponse]:
-    stmt = select(Inventory)
+    stmt = select(Inventory).options(selectinload(Inventory.product))
     res = await db.execute(stmt)
     inventories = res.scalars().all()
     

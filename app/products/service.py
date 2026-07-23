@@ -127,8 +127,12 @@ async def get_product_by_id(product_id: int, db: AsyncSession) -> ProductRespons
         except Exception:
             pass
 
-    # 2. Fetch from DB
-    stmt = select(Product).options(selectinload(Product.images), selectinload(Product.category)).where(Product.id == product_id)
+    # 2. Fetch from DB with all required relationships eagerly loaded
+    stmt = select(Product).options(
+        selectinload(Product.images),
+        selectinload(Product.category),
+        selectinload(Product.inventory)
+    ).where(Product.id == product_id)
     res = await db.execute(stmt)
     product = res.scalars().first()
     if not product:
@@ -137,11 +141,8 @@ async def get_product_by_id(product_id: int, db: AsyncSession) -> ProductRespons
     # Resolve category details
     cat_name = product.category.name if product.category else None
 
-    # Resolve stock
-    inv_stmt = select(Inventory).where(Inventory.productId == product.id)
-    inv_res = await db.execute(inv_stmt)
-    inv = inv_res.scalars().first()
-    stock = inv.quantity if inv else 0
+    # Resolve stock from loaded inventory relationship
+    stock = product.inventory.quantity if product.inventory else 0
 
     response = ProductResponse(
         id=product.id,
@@ -194,7 +195,11 @@ async def search_all_products(
     if max_price is not None:
         conditions.append(Product.price <= max_price)
 
-    stmt = select(Product).options(selectinload(Product.images), selectinload(Product.category))
+    stmt = select(Product).options(
+        selectinload(Product.images),
+        selectinload(Product.category),
+        selectinload(Product.inventory)
+    )
     if conditions:
         stmt = stmt.where(and_(*conditions))
 
@@ -203,14 +208,8 @@ async def search_all_products(
 
     responses = []
     for p in products:
-        # Category is already loaded via selectinload
         cat_name = p.category.name if p.category else None
-
-        # Load Stock details
-        inv_stmt = select(Inventory).where(Inventory.productId == p.id)
-        inv_res = await db.execute(inv_stmt)
-        inv = inv_res.scalars().first()
-        stock = inv.quantity if inv else 0
+        stock = p.inventory.quantity if p.inventory else 0
 
         responses.append(ProductResponse(
             id=p.id,
