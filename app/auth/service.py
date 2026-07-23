@@ -115,8 +115,12 @@ async def generate_auth_response(user: User, db: AsyncSession) -> AuthResponse:
     access_token = create_access_token(user.id, user.role.name, user.email)
 
     # 2. Create new refresh token (Delete any existing token for this user first - RTR)
-    del_stmt = delete(RefreshToken).where(RefreshToken.userId == user.id)
-    await db.execute(del_stmt)
+    tok_stmt = select(RefreshToken).where(RefreshToken.userId == user.id)
+    tok_res = await db.execute(tok_stmt)
+    existing_token = tok_res.scalars().first()
+    if existing_token:
+        await db.delete(existing_token)
+        await db.flush()
 
     new_refresh_token_str = str(uuid.uuid4())
     expiry = datetime.utcnow() + timedelta(days=settings.jwt_refresh_expiration_days)

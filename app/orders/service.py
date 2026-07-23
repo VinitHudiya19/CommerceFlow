@@ -1,4 +1,5 @@
 from sqlalchemy import select, and_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.orders.models import Order, OrderItem, OrderStatus
 from app.users.models import User, Address
@@ -90,13 +91,13 @@ async def place_order(user_id: int, request: OrderRequest, db: AsyncSession) -> 
     return map_order_response(order)
 
 async def list_user_orders(user_id: int, db: AsyncSession) -> list[OrderResponse]:
-    stmt = select(Order).where(Order.userId == user_id).order_by(Order.createdAt.desc())
+    stmt = select(Order).options(selectinload(Order.items)).where(Order.userId == user_id).order_by(Order.createdAt.desc())
     res = await db.execute(stmt)
     orders = res.scalars().all()
     return [map_order_response(o) for o in orders]
 
 async def cancel_user_order(user_id: int, order_id: int, db: AsyncSession) -> OrderResponse:
-    stmt = select(Order).where(and_(Order.id == order_id, Order.userId == user_id))
+    stmt = select(Order).options(selectinload(Order.items)).where(and_(Order.id == order_id, Order.userId == user_id))
     res = await db.execute(stmt)
     order = res.scalars().first()
     

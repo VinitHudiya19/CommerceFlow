@@ -1,5 +1,6 @@
 from decimal import Decimal
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.cart.models import Cart, CartItem
 from app.products.models import Product
@@ -7,15 +8,20 @@ from app.cart.schemas import CartResponse, CartItemResponse, CartItemRequest
 from app.common.exceptions import ResourceNotFoundException, BadRequestException
 
 async def get_or_create_cart(user_id: int, db: AsyncSession) -> Cart:
-    # Query cart or create it lazily if not found
-    stmt = select(Cart).where(Cart.userId == user_id)
+    # Query cart or create it lazily if not found with selectinload options
+    stmt = select(Cart).options(
+        selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.images)
+    ).where(Cart.userId == user_id)
     res = await db.execute(stmt)
     cart = res.scalars().first()
     
     if not cart:
         cart = Cart(userId=user_id)
         db.add(cart)
-        await db.flush() # Populate ID without full transaction commit yet
+        await db.commit()
+        # Re-query with selectinload to ensure items relationship is loaded
+        res = await db.execute(stmt)
+        cart = res.scalars().first()
         
     return cart
 

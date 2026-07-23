@@ -1,4 +1,5 @@
 from sqlalchemy import select, and_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.wishlist.models import WishlistItem
 from app.products.models import Product
@@ -7,7 +8,9 @@ from app.common.exceptions import ResourceNotFoundException, BadRequestException
 
 async def get_user_wishlist(user_id: int, db: AsyncSession) -> list[WishlistResponse]:
     # Query wishlist items for user
-    stmt = select(WishlistItem).where(WishlistItem.userId == user_id)
+    stmt = select(WishlistItem).options(
+        selectinload(WishlistItem.product).selectinload(Product.images)
+    ).where(WishlistItem.userId == user_id)
     res = await db.execute(stmt)
     items = res.scalars().all()
     

@@ -1,5 +1,6 @@
 import json
 from sqlalchemy import select, and_, or_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.products.models import Product, Category, ProductImage
 from app.inventory.models import Inventory
@@ -127,17 +128,14 @@ async def get_product_by_id(product_id: int, db: AsyncSession) -> ProductRespons
             pass
 
     # 2. Fetch from DB
-    stmt = select(Product).where(Product.id == product_id)
+    stmt = select(Product).options(selectinload(Product.images), selectinload(Product.category)).where(Product.id == product_id)
     res = await db.execute(stmt)
     product = res.scalars().first()
     if not product:
         raise ResourceNotFoundException("Product", "id", product_id)
 
     # Resolve category details
-    cat_stmt = select(Category).where(Category.id == product.categoryId)
-    cat_res = await db.execute(cat_stmt)
-    category = cat_res.scalars().first()
-    category_name = category.name if category else None
+    cat_name = product.category.name if product.category else None
 
     # Resolve stock
     inv_stmt = select(Inventory).where(Inventory.productId == product.id)
@@ -151,7 +149,7 @@ async def get_product_by_id(product_id: int, db: AsyncSession) -> ProductRespons
         description=product.description,
         price=product.price,
         categoryId=product.categoryId,
-        categoryName=category_name,
+        categoryName=cat_name,
         active=product.active,
         images=[img.imageUrl for img in product.images],
         stock=stock,
@@ -196,7 +194,7 @@ async def search_all_products(
     if max_price is not None:
         conditions.append(Product.price <= max_price)
 
-    stmt = select(Product)
+    stmt = select(Product).options(selectinload(Product.images), selectinload(Product.category))
     if conditions:
         stmt = stmt.where(and_(*conditions))
 
