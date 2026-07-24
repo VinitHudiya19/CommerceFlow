@@ -1,294 +1,150 @@
-# CommerceFlow — Asynchronous FastAPI Modular Monolith E-Commerce
+# CommerceFlow - Asynchronous FastAPI Modular Monolith E-Commerce System
 
-CommerceFlow is a production-ready, interview-defensible modular monolith e-commerce backend built with **Python 3.13** and **FastAPI**. By using a clean package-per-feature architecture, the codebase mirrors the logical division of microservices while avoiding their operational complexity and network latency.
+CommerceFlow is a full-featured e-commerce web application built using Python 3.12+, FastAPI, SQLAlchemy 2.0 (Async), PostgreSQL, Redis, Celery, and a Vanilla JavaScript single-page application (SPA) frontend.
 
----
+The project is structured as a **modular monolith**, organizing business logic into clean feature modules (`auth`, `products`, `cart`, `orders`, `inventory`, `payments`, `reviews`, `wishlist`, `admin`, `users`, `security`) within a single repository and deployment unit.
 
-## 🌟 Core Features & Python Optimizations
-
-### 1. Asynchronous Everywhere (Async/Await)
-FastAPI runs on an ASGI server (Uvicorn), enabling high-concurrency request processing. The entire application database layer is built using **SQLAlchemy 2.0 (Async)** and **asyncpg** (async PostgreSQL driver), eliminating blocking database wait-states. Caching is handled asynchronously via Redis (`redis-py` async client).
-
-### 2. Real-World Task Queue (Celery + Redis)
-Instead of inside-the-process event publishing, CommerceFlow implements a distributed task queue utilizing **Celery** with **Redis** as a message broker.
-- Core checkout, stock allocation, payment initialization, and mock email alerts are offloaded to Celery background workers.
-- If a high-volume spike occurs during checkout, the FastAPI web app returns a response to the customer immediately, while the worker asynchronously handles the stock updates and notifications.
-
-### 3. AI Product Recommendation Engine
-Personalized shopping suggestions are generated dynamically by a built-in recommendation engine (`GET /api/products/recommendations`) based on:
-- **Category Similarity**: Products matching the categories of user's previous orders or wishlist saves.
-- **Purchase History Co-occurrence**: Finds common items bought together by other shoppers (e.g., if Mouse + Keyboard is purchased, suggest Laptop Stand, Desk Mat, USB Hub).
-- **Collaborative Filtering**: Recommends products purchased by users with similar order profiles.
-
-### 4. Pluggable AI Review Summarizer
-Instead of parsing thousands of comments manually, users get a structured highlights summary (`GET /api/reviews/product/{id}/ai-summary`) compiled by our AI engine:
-- Built with a pluggable `AIService` running a local NLP rule-based parser by default (100% offline & zero-config).
-- Includes ready-to-use commented configurations for swapping to **Google Gemini API** or local **Hugging Face Transformers** (BART models) in production.
-
-### 5. Advanced Security & Threat Mitigation
-- **JWT + Refresh Token Rotation (RTR)**: Access tokens expire in 15 minutes. Refreshing a token generates a new refresh token and deletes the old one to prevent token-reuse/replay attacks.
-- **Brute-Force Account Locking**: Users are locked out for 30 minutes after 5 consecutive failed login attempts, guarding against dictionary attacks.
-- **Client IP Rate Limiting**: An early-stage custom token-bucket middleware restricts clients to 100 requests per minute per IP address.
-- **Checkout Email Verification**: Users must verify their email via aUUID token link to complete checkouts.
+For an in-depth breakdown of system design, relationship loading, security, and sequence flows, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
-## 🛠️ Tech Stack & Versioning
+## Technical Stack Overview
 
-| Component | Technology | Version / Coordinate |
+| Layer / Role | Technology | Description |
 |---|---|---|
-| **Core Runtime** | Python | 3.13 / 3.12 |
-| **Framework** | FastAPI | 0.115.6 |
-| **ASGI Server** | Uvicorn | 0.34.0 |
-| **Database ORM** | SQLAlchemy | 2.0.36 (Async) |
-| **DB Driver** | asyncpg | 0.30.0 |
-| **Validation / DTOs** | Pydantic | 2.10.4 |
-| **Settings** | Pydantic Settings | 2.7.0 |
-| **Task Queue** | Celery | 5.4.0 |
-| **Cache & Broker** | Redis | 4.6.0 |
-| **Testing** | Pytest + pytest-asyncio | 8.x / 0.25.x |
-| **Security / Hash** | PyJWT + Bcrypt | 2.10.1 / 4.2.1 |
+| **Language** | Python 3.12 / 3.13 | Core backend programming runtime |
+| **Web Framework** | FastAPI 0.115 | High-performance async ASGI web framework |
+| **ASGI Server** | Uvicorn | High-concurrency async web server |
+| **Database ORM** | SQLAlchemy 2.0 (Async) | Type-safe asynchronous database access layer |
+| **DB Driver** | asyncpg | Fast async PostgreSQL database driver |
+| **Database** | PostgreSQL 16 | Relational database for ACID transactional safety |
+| **Caching & Broker** | Redis 7 | In-memory cache and Celery message broker |
+| **Background Tasks** | Celery 5.4 | Asynchronous background worker queue |
+| **Authentication** | PyJWT + Bcrypt | Passlib password hashing & JWT token rotation |
+| **Frontend** | HTML5, CSS3, Vanilla JS | SPA with client-side hash router hosted by FastAPI |
 
 ---
 
-## 📐 System Architecture Diagram
+## Key Features
 
-```mermaid
-graph TD
-    Client[Web Browser / SPA Client] -->|HTTP Requests| RL[RateLimitingFilter Middleware]
-    RL -->|Pass / Block| SecFilter[JWT Authentication Dependency]
-    SecFilter -->|Authenticated dict| APIRouter[FastAPI APIRouter]
-    
-    subgraph FastAPI Application Container
-        APIRouter --> AuthR[AuthRouter]
-        APIRouter --> ProdR[ProductRouter]
-        APIRouter --> CartR[CartRouter]
-        APIRouter --> OrderR[OrderRouter]
-        APIRouter --> PayR[PaymentRouter]
-        
-        OrderR --> OrderS[OrderService]
-        OrderS -->|Delay Task| Broker[(Redis Celery Broker)]
-    end
+1. **Fully Asynchronous Database Pipeline**:
+   Built using SQLAlchemy 2.0 Async Engine and `asyncpg`. All queries, updates, and relationship loads execute asynchronously without blocking main thread event loops.
 
-    subgraph Celery Worker Container
-        Broker --> Worker[Celery Worker Processes]
-        Worker -->|Deduct Stock| InvT[process_order_placement_task]
-        Worker -->|Mock SMTP| NotifT[send_email_notification_task]
-    end
-    
-    subgraph Data Tier
-        OrderS --> DB[(PostgreSQL Database)]
-        Worker --> DB
-        ProdR --> Cache[(Redis Cache)]
-    end
+2. **Background Order Processing (Celery + Redis)**:
+   Order checkouts offload stock deduction, payment initialization, and notification logs to Celery background workers via Redis message queues, keeping API response times fast under heavy traffic.
+
+3. **Refresh Token Rotation (RTR) & Security**:
+   - Access tokens expire in 15 minutes.
+   - Refresh tokens are rotated atomically upon use to prevent replay attacks.
+   - Account locking temporarily locks user accounts after 5 failed login attempts.
+   - Client IP rate limiting protects endpoints against brute-force attacks.
+
+4. **Product Catalog & Redis Caching**:
+   Product queries and categories are cached in Redis to speed up catalog browsing and search response times.
+
+5. **AI Recommendation Engine & Review Summarizer**:
+   - Recommendation engine suggests items based on purchase history co-occurrence and category preferences.
+   - Review summarizer provides parsed rating highlights and key takeaway summaries.
+
+6. **Admin Dashboard**:
+   Aggregates system-wide metrics including total revenue, user count, order counts, pending status breakdowns, and low-stock inventory alerts.
+
+---
+
+## Project Structure
+
 ```
-
-## 🗄️ Entity Relationship (ER) Diagram
-
-```mermaid
-erDiagram
-    users ||--o{ addresses : "owns"
-    users ||--o| refresh_tokens : "has"
-    users ||--o| carts : "owns"
-    users ||--o{ orders : "places"
-    users ||--o{ reviews : "writes"
-    users ||--o{ wishlist_items : "saves"
-    
-    categories ||--o{ products : "contains"
-    categories ||--o{ categories : "parent category"
-    
-    products ||--o| inventory : "tracked by"
-    products ||--o{ cart_items : "added to"
-    products ||--o{ order_items : "ordered as"
-    products ||--o{ reviews : "reviewed"
-    products ||--o{ wishlist_items : "bookmarked"
-    
-    carts ||--o{ cart_items : "contains"
-    
-    orders ||--o{ order_items : "contains"
-    orders ||--o| payments : "paid by"
-    
-    users {
-        Integer id PK
-        String fullName
-        String email UK
-        String passwordHash
-        String phone
-        Role role
-        boolean verified
-        Integer failedAttempts
-        DateTime lockTime
-        String verificationToken
-        DateTime verificationTokenExpiry
-        DateTime createdAt
-    }
-    
-    addresses {
-        Integer id PK
-        Integer userId FK
-        String label
-        String addressLine1
-        String addressLine2
-        String city
-        String state
-        String pincode
-    }
-    
-    products {
-        Integer id PK
-        String name
-        String description
-        Decimal price
-        Integer categoryId FK
-        boolean active
-        DateTime createdAt
-    }
-    
-    categories {
-        Integer id PK
-        String name UK
-        String description
-        Integer parentId FK
-    }
-    
-    inventory {
-        Integer id PK
-        Integer productId FK
-        Integer quantity
-        Integer lowStockThreshold
-    }
-    
-    carts {
-        Integer id PK
-        Integer userId FK
-    }
-    
-    cart_items {
-        Integer id PK
-        Integer cartId FK
-        Integer productId FK
-        Integer quantity
-        Decimal unitPrice
-    }
-    
-    orders {
-        Integer id PK
-        Integer userId FK
-        Decimal totalAmount
-        OrderStatus status
-        String deliveryAddress
-        DateTime createdAt
-    }
-    
-    order_items {
-        Integer id PK
-        Integer orderId FK
-        Integer productId FK
-        String productName
-        Integer quantity
-        Decimal unitPrice
-        Decimal subtotal
-    }
-    
-    payments {
-        Integer id PK
-        Integer orderId FK
-        Decimal amount
-        String transactionId UK
-        PaymentStatus status
-    }
-    
-    refresh_tokens {
-        Integer id PK
-        Integer userId FK
-        String token UK
-        DateTime expiryDate
-    }
-    
-    reviews {
-        Integer id PK
-        Integer productId FK
-        Integer userId FK
-        String userName
-        Integer rating
-        String comment
-        DateTime createdAt
-    }
-    
-    wishlist_items {
-        Integer id PK
-        Integer userId FK
-        Integer productId FK
-        String productName
-    }
+E-COMMERCE/
+├── app/
+│   ├── admin/          # Dashboard aggregate statistics
+│   ├── auth/           # Login, registration, token rotation
+│   ├── cart/           # Cart item operations & price snapshots
+│   ├── common/         # Redis connection, database init, seed data
+│   ├── config.py       # Application settings via Pydantic
+│   ├── database.py     # Database engine and async session creation
+│   ├── inventory/      # Stock control and refill management
+│   ├── main.py         # App factory, middleware, static route serving
+│   ├── orders/         # Order creation & Celery background tasks
+│   ├── payments/       # Mock payment verification & transactions
+│   ├── products/       # Product catalog, categories, search, caching
+│   ├── reviews/        # Ratings, comments, AI review summarizer
+│   ├── security/       # JWT helpers, rate limiting middleware
+│   ├── users/          # Profiles and delivery address management
+│   └── wishlist/       # Saved bookmarks
+├── static/             # Frontend SPA assets (app.js, app.css, index.html)
+├── tests/              # Automated unit and integration tests (pytest)
+├── ARCHITECTURE.md     # In-depth system architecture documentation
+├── docker-compose.yml  # Production multi-container orchestration file
+├── Dockerfile          # Container build steps
+└── requirements.txt    # Python package dependencies
 ```
 
 ---
 
-## 📁 Modular Monolith Directory Structure
+## How to Run the Project
 
-```
-app/
-├── auth/               # Signup, login, refresh token, password hashing
-├── users/              # User profiles, Address CRUD
-├── products/           # Categories, products, specifications search, AI recommendations
-├── inventory/          # Stock refills, thresholds, admin adjustments
-├── cart/               # DB cart line items, pricing snapshots
-├── orders/             # Checkout logic, Celery background tasks & workers
-├── payments/           # Simulated payment gateways & confirmations
-├── reviews/            # 1-5 star ratings, pluggable AI Review summary engine
-├── wishlist/           # User saved bookmarks
-├── admin/              # Dashboard aggregations (revenue, user count, pending orders)
-├── common/             # Settings, database configs, generic ApiResponse envelopes, data seeder
-└── security/           # JWT verifications, Rate Limiting token-bucket middleware
-```
+### Option 1: Quick Local Run (Development Mode)
+
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Start FastAPI application server**:
+   ```bash
+   uvicorn app.main:app --reload --port 8080
+   ```
+
+3. **Access the application**:
+   - **Frontend App**: Open [http://localhost:8080/](http://localhost:8080/)
+   - **Interactive API Documentation (Swagger)**: Open [http://localhost:8080/docs](http://localhost:8080/docs)
 
 ---
 
-## 🚀 Getting Started & Local Runs
+### Option 2: Full Docker Run (Production Containerization)
 
-### 📝 Prerequisites
-- **Python 3.12+**
-- **pip** and **virtualenv** (optional, recommended)
-- **Docker** and **Docker Compose** (for full containerization runs)
+Spin up PostgreSQL database, Redis broker, Celery worker, and FastAPI application:
 
-### 💻 Local Development Run (Using SQLite and no Celery worker required)
-FastAPI can run fully with a local SQLite file in dev mode. 
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Run the FastAPI ASGI server
-uvicorn app.main:app --reload --port 8080
-```
-Open **`http://localhost:8080/`** in your browser. Spring Boot static frontend SPA files have been fully ported and are hosted directly by Uvicorn.
-- **Swagger Documentation**: [http://localhost:8080/docs](http://localhost:8080/docs)
-
-### 🐳 Full Production Run (Docker Compose - PostgreSQL + Redis + Celery Worker)
-To spin up the production Postgres database, Redis cache broker, Celery worker process, and the FastAPI application:
 ```bash
 docker-compose up --build
 ```
-This launches:
-- **FastAPI Web Server** on port `8080`
-- **Celery Worker** executing async background queues
-- **PostgreSQL Database** on port `5432`
-- **Redis Cache & Broker** on port `6379`
+
+Services started by Docker Compose:
+- **FastAPI Application**: `http://localhost:8080`
+- **PostgreSQL Database**: Port `5432`
+- **Redis Cache & Broker**: Port `6379`
+- **Celery Worker**: Background queue worker process
 
 ---
 
-## 🔑 Demo Seeding & Default Credentials
-On database creation, the application seeder automatically populates sample categories, products, inventory records, and demo accounts:
+## Default Demo Credentials
 
-- **Admin Account**: `admin@commerceflow.com` / `admin123`
-- **Customer Account**: `customer@commerceflow.com` / `customer123`
+On startup, the system automatically seeds initial product categories, products, inventory records, and demo accounts:
+
+- **Admin Account**:
+  - Email: `admin@commerceflow.com`
+  - Password: `admin123`
+
+- **Customer Account**:
+  - Email: `customer@commerceflow.com`
+  - Password: `customer123`
 
 ---
 
-## 🧪 Running Automated Tests
-CommerceFlow has fully covered service tests using **pytest** and **pytest-asyncio** mocking database sessions and celery queues:
+## Automated Test Suite
+
+Run unit and service integration tests using `pytest`:
+
 ```bash
-python -m pytest
+python -m pytest -v
 ```
-- `tests/test_auth.py`: Tests email duplicates, token rotation, and account locking lockout time validations.
-- `tests/test_orders.py`: Tests empty cart checkouts, unverified email blockages, and Celery task delays.
+
+Tests cover:
+- User registration, duplicate email handling, and account locking rules (`tests/test_auth.py`).
+- Empty cart validation, unverified email checks, and order checkout flows (`tests/test_orders.py`).
+
+---
+
+## System Architecture Reference
+
+For detailed explanations of the modular monolith design pattern, async database greenlet handling, relationship loading choices (`selectinload` vs `noload`), and background processing sequence diagrams, read [ARCHITECTURE.md](ARCHITECTURE.md).
